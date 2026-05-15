@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>아침 보고 생성기</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #f4f5f7;
+      padding: 20px;
+      color: #222;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 24px;
+      text-align: center;
+    }
+
+    .date {
+      text-align: center;
+      color: #666;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 8px;
+      margin-top: 16px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #888;
+      margin-top: 6px;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 18px;
+    }
+
+    .generate-btn {
+      background: #111827;
+      color: white;
+    }
+
+    .copy-btn {
+      background: #facc15;
+      color: #111;
+    }
+
+    .output {
+      margin-top: 20px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      white-space: pre-wrap;
+      line-height: 1.6;
+      min-height: 120px;
+      font-size: 15px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #111827;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 999px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      font-size: 14px;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>아침 보고 생성기</h1>
+      <div class="date" id="today"></div>
+
+      <label for="schedule">일정</label>
+      <textarea id="schedule" placeholder="한 줄에 하나씩 입력하세요&#10;예시)&#10;10시 회의&#10;거래처 미팅"></textarea>
+      <div class="hint">한 줄마다 자동으로 '-'가 붙습니다.</div>
+
+      <label for="etc">기타</label>
+      <textarea id="etc" placeholder="기타 내용을 입력하세요"></textarea>
+
+      <button class="generate-btn" onclick="generateText()">보고 생성하기</button>
+      <button class="copy-btn" onclick="copyText()">복사하기</button>
+
+      <div class="output" id="output"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">복사 완료!</div>
+
+  <script>
+    const today = new Date();
+    const formattedDate = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
+    document.getElementById('today').innerText = formattedDate;
+
+    function formatSection(title, text) {
+      const lines = text
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line !== '')
+        .map(line => `- ${line}`)
+        .join('\n');
+
+      return `<${title}>\n${lines || '- 없음'}`;
+    }
+
+    function generateText() {
+      const schedule = document.getElementById('schedule').value;
+      const etc = document.getElementById('etc').value;
+
+      const result = `${formattedDate}\n\n${formatSection('일정', schedule)}\n\n${formatSection('기타', etc)}`;
+
+      document.getElementById('output').innerText = result;
+
+      localStorage.setItem('schedule', schedule);
+      localStorage.setItem('etc', etc);
+    }
+
+    async function copyText() {
+      const text = document.getElementById('output').innerText;
+
+      if (!text.trim()) {
+        generateText();
+      }
+
+      try {
+        await navigator.clipboard.writeText(document.getElementById('output').innerText);
+        showToast();
+      } catch (err) {
+        alert('복사 실패');
+      }
+    }
+
+    function showToast() {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    window.onload = () => {
+      const savedSchedule = localStorage.getItem('schedule');
+      const savedEtc = localStorage.getItem('etc');
+
+      if (savedSchedule) {
+        document.getElementById('schedule').value = savedSchedule;
+      }
+
+      if (savedEtc) {
+        document.getElementById('etc').value = savedEtc;
+      }
+
+      generateText();
+    };
+  </script>
+</body>
+</html>
